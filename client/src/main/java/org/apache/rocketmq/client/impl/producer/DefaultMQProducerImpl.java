@@ -113,7 +113,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {// 判断服务状态
             case CREATE_JUST:// 刚刚创建，但是为启动
-                // 为什么要先初始化为启动失败
+                /* 为什么要先初始化为启动失败 ?*/
                 this.serviceState = ServiceState.START_FAILED;
 
                 // 校验ProducerGroup名称合法性
@@ -125,6 +125,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
                 // 创建MQClientInstance实例（单例模式）
                 // MQClientInstance负责执行一些定时任务比如定时更新nameserver地址、从nameserver更新topic路由信息、向broker发送心跳等等
+                /* RPCHook是什么 ？*/
                 this.mQClientFactory = MQClientManager.getInstance().getAndCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
                 // 向MQClientInstance注册该Producer，将Group名和Producer对象以键值对的方式放入MQClientInstance的producerTable（ConcurrentHashMap）里
@@ -565,6 +566,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final SendCallback sendCallback, //
         final TopicPublishInfo topicPublishInfo, //
         final long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 获取broker地址
         String brokerAddr = this.mQClientFactory.findBrokerAddressInPublish(mq.getBrokerName());
         if (null == brokerAddr) {
             tryToFindTopicPublishInfo(mq.getTopic());
@@ -577,7 +579,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
             byte[] prevBody = msg.getBody();
             try {
-
+                //生成消息ID
                 MessageClientIDSetter.setUniqID(msg);
 
                 int sysFlag = 0;
@@ -589,7 +591,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 if (tranMsg != null && Boolean.parseBoolean(tranMsg)) {
                     sysFlag |= MessageSysFlag.TRANSACTION_PREPARED_TYPE;
                 }
-
+                //一些钩子函数执行
                 if (hasCheckForbiddenHook()) {
                     CheckForbiddenContext checkForbiddenContext = new CheckForbiddenContext();
                     checkForbiddenContext.setNameSrvAddr(this.defaultMQProducer.getNamesrvAddr());
@@ -601,7 +603,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     checkForbiddenContext.setUnitMode(this.isUnitMode());
                     this.executeCheckForbiddenHook(checkForbiddenContext);
                 }
-
+                //一些钩子函数执行
                 if (this.hasSendMessageHook()) {
                     context = new SendMessageContext();
                     context.setProducer(this);
@@ -621,7 +623,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     }
                     this.executeSendMessageHookBefore(context);
                 }
-
+                //消息发送请求体构造
                 SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
                 requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
                 requestHeader.setTopic(msg.getTopic());
